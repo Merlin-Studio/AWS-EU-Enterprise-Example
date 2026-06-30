@@ -12,6 +12,11 @@ Generated:    2026-06-30T07:22:44.892760Z
 Profile: **ADVANCED**
 Compliance: **GDPR, EUCS, NIS2**
 
+> **Two must-reads before you deploy:** this zone uses **HSM-backed KMS** - `cdk deploy`
+> and the LZA pipeline will FAIL until you complete [`HSM_SETUP.md`](./HSM_SETUP.md).
+> [`INPUT_ASSERTIONS.md`](./INPUT_ASSERTIONS.md) lists spec inputs not represented in the
+> output (e.g. the EKS sections are not emitted in any format).
+
 ---
 
 ## What's in this zip
@@ -25,7 +30,9 @@ matching feature is enabled, so nothing below is "missing".
 ├── README.md                  (this file)
 ├── DEPLOYMENT_GUIDE.md        Step-by-step deploy for every format
 ├── architecture.mmd           Mermaid diagram of the landing zone topology
-├── PLACEHOLDERS.md            (only present if PLACEHOLDER_* tokens were emitted)
+├── HSM_SETUP.md               (!) CloudHSM custom key store setup - REQUIRED before deploy
+├── INPUT_ASSERTIONS.md        Known gaps: spec inputs not represented in the output
+├── PLACEHOLDERS.md            Tokens to replace before deploy
 ├── aws-lza/                   Format 1: AWS Control Tower + Landing Zone Accelerator (YAML)
 │   ├── global-config.yaml
 │   ├── accounts-config.yaml
@@ -35,6 +42,12 @@ matching feature is enabled, so nothing below is "missing".
 │   ├── security-config.yaml
 │   ├── customizations-config.yaml
 │   └── service-control-policies/, kms/, vpc-endpoint-policies/  (supporting JSON)
+└── aws-cdk/                   Format 2: AWS CDK (TypeScript)
+    ├── bin/app.ts
+    ├── lib/*-stack.ts         organizations, accounts, iam, network, kms, kms-replica,
+    │                          logging, security, config, backup, cost
+    ├── package.json, tsconfig.json, cdk.json
+    └── .gitignore
 ```
 
 ---
@@ -44,7 +57,7 @@ matching feature is enabled, so nothing below is "missing".
 | | |
 |---|---|
 | **Organization name** | AcmeCorp |
-| **Primary contact** | admin@gcp1.intentarch.app |
+| **Primary contact** | admin@acme.com |
 | **Security contact** | my2mail@acme.com |
 | **Billing contact** | my3mail@acme.com |
 | **Home region** | eu-central-1 |
@@ -52,8 +65,6 @@ matching feature is enabled, so nothing below is "missing".
 | **Profile** | advanced (enterprise) |
 | **Compliance** | gdpr, eucs, nis2 |
 | **LZA version** | 1.14.x |
-| **OpenTofu** | 1.12.0 |
-| **hashicorp/aws** | ~> 5.80 |
 | **aws-cdk-lib** | ^2.150.0 |
 
 ---
@@ -183,7 +194,7 @@ trace* — what was added, why, and what triggered it.
 | Section | Overlay | Triggered by | Rationale |
 |---|---|---|---|
 | `03_iam_model` | `github_actions_oidc_and_deploy_role` | `existing_cicd contains 'github_actions'` | Discovery declared GitHub Actions as an existing CI/CD platform (existing_cicd). Scaffold the GitHub OIDC provider and a Terraform deploy role so the pipeline has a keyless federated path to AWS. Without this, a Terraform-via-GitHub-Actions team gets a landing zone with no pipeline auth path and must hand-build the OIDC provider + role. |
-| `04_networking` | `multi_region_secondary_networking` | `multi_region_required=true` | Multi-region answers (warm/active-active DR) require a second hub VPC + workloads VPC in the secondary region, a secondary regional Transit Gateway, and an inter-region TGW peering attachment. Without these, the spec declares warm-standby but is physically single-region â€” a direct contradiction the generators cannot recover from. |
+| `04_networking` | `multi_region_secondary_networking` | `multi_region_required=true` | Multi-region answers (warm/active-active DR) require a second hub VPC + workloads VPC in the secondary region, a secondary regional Transit Gateway, and an inter-region TGW peering attachment. Without these, the spec declares warm-standby but is physically single-region — a direct contradiction the generators cannot recover from. |
 | `04_networking` | `regulated_centralized_egress` | `compliance_requirements contains 'pci_dss' OR compliance_requirements contains 'fedramp_moderate' OR compliance_requirements contains 'fedramp_high' OR compliance_requirements contains 'nist_800_53' OR compliance_requirements contains 'eucs'` | Boundary-control frameworks (PCI-DSS Req 1 NSCs, NIST 800-53 / FedRAMP SC-7, EUCS) require a controlled, inspected egress boundary. The egress model is set to centralized so spoke egress flows through the inspection VPC's AWS Network Firewall; the compliance overlay adds that inspection VPC. |
 | `07_advanced_security` | `regulated_enables_macie` | `compliance_requirements contains 'pci_dss' OR compliance_requirements contains 'hipaa' OR compliance_requirements contains 'gdpr' OR compliance_requirements contains 'eucs' OR compliance_requirements contains 'nis2'` | Data-protection frameworks require knowing where sensitive data (PANs / PII / PHI) lives — PCI-DSS Req 3 / 12.5.1, HIPAA, GDPR. Amazon Macie is the native S3 discovery/classification control, so it is enabled by default when any of these is in scope. Matches the Architecture Scorecard, which fails Macie-off for these frameworks. |
 | `07_advanced_security` | `regulated_enables_inspector` | `compliance_requirements contains 'pci_dss' OR compliance_requirements contains 'fedramp_moderate' OR compliance_requirements contains 'fedramp_high' OR compliance_requirements contains 'nist_800_53' OR compliance_requirements contains 'eucs'` | PCI-DSS 11.3.1 (internal vulnerability scanning) and NIST 800-53 / FedRAMP RA-5 require continuous vulnerability scanning. Amazon Inspector is the native control, so it is enabled by default when any of these is in scope. Matches the Architecture Scorecard, which fails Inspector-off for these frameworks. |
