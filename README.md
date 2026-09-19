@@ -15,6 +15,8 @@ Generated:    2026-06-30T07:22:44.892760Z
 > infrastructure-as-code bundle (LZA, OpenTofu, CDK or tfvars) in minutes.
 > **[Open Merlin →](https://app.merlin-studio.cloud)**
 
+✉️ **Questions about this example, or need one shaped for your organization?** Write to [intentarcha@gmail.com](mailto:intentarcha@gmail.com?subject=AWS-EU-Enterprise-Example) — questions, corrections and requests are all welcome.
+
 Profile: **ADVANCED**
 Compliance: **GDPR, EUCS, NIS2**
 
@@ -218,5 +220,7 @@ trace* — what was added, why, and what triggered it.
 See **DEPLOYMENT_GUIDE.md** for the deploy-and-verify runbook tailored to each output format.
 
 ---
+
+✉️ Questions or feedback: [intentarcha@gmail.com](mailto:intentarcha@gmail.com?subject=AWS-EU-Enterprise-Example)
 
 ⭐ If this saved you time, a star helps others find it.
