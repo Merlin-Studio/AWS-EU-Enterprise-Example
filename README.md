@@ -63,7 +63,7 @@ matching feature is enabled, so nothing below is "missing".
 | | |
 |---|---|
 | **Organization name** | AcmeCorp |
-| **Primary contact** | admin@acme.com |
+| **Primary contact** | intentarcha@gmail.com |
 | **Security contact** | my2mail@acme.com |
 | **Billing contact** | my3mail@acme.com |
 | **Home region** | eu-central-1 |
